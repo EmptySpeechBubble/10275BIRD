@@ -372,12 +372,14 @@
         <details class="detail-section">
             <summary>🐦 Bird Behavior Systems</summary>
             <ul>
-                <li><strong>States:</strong> Birds transition between Flying, Perched, Hopping, Pecking, Bathing, Feeding babies, Building nests, and Fleeing</li>
-                <li><strong>Hunger:</strong> Birds actively seek food when hungry (worms, seeds, berries)</li>
+                <li><strong>States:</strong> Birds transition between Flying, Perched, Hopping, Pecking, Bathing, Sleeping, Feeding babies, Building nests, and Fleeing</li>
+                <li><strong>Sleeping:</strong> Birds fall asleep at night while perched, showing floating "ZzZz" above them. They wake at dawn or if danger approaches</li>
+                <li><strong>Hunger:</strong> Birds actively seek food when hungry (worms, seeds, berries). Player-added food gets 2x priority!</li>
                 <li><strong>Nesting:</strong> Non-wild birds collect twigs to build nests in trees. Special golden twigs speed up construction</li>
                 <li><strong>Parenting:</strong> Adult birds feed hungry baby birds, prioritizing critically hungry ones</li>
                 <li><strong>Flocking:</strong> Birds of similar types recognize each other and coordinate behaviors</li>
                 <li><strong>Ground behavior:</strong> Birds spend significant time hopping and pecking on the ground, foraging naturally</li>
+                <li><strong>Calm vibe:</strong> Birds perch 80% of the time and fly only 2% of the time for a peaceful atmosphere</li>
             </ul>
         </details>
 
@@ -418,7 +420,7 @@
             <ul>
                 <li><strong>Puddles:</strong> Form during rain, birds bathe in them, evaporate over time</li>
                 <li><strong>Ponds:</strong> Permanent water sources (10% chance to spawn on load or after 5 rains)</li>
-                <li><strong>Koi fish:</strong> Swim in ponds, get excited when birds approach, and may jump out of water!</li>
+                <li><strong>Koi fish:</strong> Swim in ponds in 8 traditional colors (orange-red, gold, crimson, brown, slate grey), get excited when birds approach, and may jump out of water!</li>
                 <li><strong>Frogs:</strong> Live near ponds, jump away from birds, croak warnings, catch ants</li>
                 <li><strong>Bird interactions:</strong> Birds visit ponds to drink and bathe, can hop below ground to reach them</li>
             </ul>
@@ -448,11 +450,13 @@
         <details class="detail-section">
             <summary>☁️ Weather & Time</summary>
             <ul>
-                <li><strong>Day/Night cycle:</strong> ~4 minutes per full cycle</li>
+                <li><strong>Day/Night cycle:</strong> ~4 minutes per full cycle (perfectly balanced!)</li>
                 <li><strong>Rain:</strong> Spawns puddles and worms, birds seek shelter</li>
                 <li><strong>Thunder:</strong> Can occur during heavy rain with lightning strikes</li>
                 <li><strong>Rainbow:</strong> Rare, appears after rain with right conditions</li>
-                <li><strong>Night behaviors:</strong> Worms emerge, owls hunt, birds shelter in birdhouses</li>
+                <li><strong>Weather Forecast:</strong> 3-icon forecast in clock display with 95% accuracy</li>
+                <li><strong>Sky gradient:</strong> Smooth 3-color gradients for atmospheric perspective</li>
+                <li><strong>Night behaviors:</strong> Worms emerge, owls hunt, birds sleep and shelter in birdhouses</li>
             </ul>
         </details>
 
@@ -548,7 +552,9 @@
                 <li><strong>Spawn Chance:</strong> 10% chance for wind chimes to appear at game start (hanging from trees)</li>
                 <li><strong>Owl Delivery:</strong> After day 15, owls may deliver wind chimes at night</li>
                 <li><strong>Visual Design:</strong> Metallic chimes with 4-6 tubes that sway gently in the breeze</li>
-                <li><strong>Musical Sounds:</strong> Chimes play pleasant notes periodically (mute button compatible)</li>
+                <li><strong>Musical Sounds:</strong> Chimes play pleasant notes every 15-45 seconds (realistic timing, mute button compatible)</li>
+                <li><strong>Creature Interactions:</strong> Birds, squirrels, rats, and owls trigger chimes when passing through</li>
+                <li><strong>Tree Dependency:</strong> Falls gracefully if tree disappears, owl may deliver replacement after 15 days</li>
                 <li><strong>Aesthetic:</strong> Adds calm, meditative atmosphere to your garden</li>
             </ul>
         </details>
@@ -556,7 +562,8 @@
         <details class="detail-section">
             <summary>📋 Recent Major Updates</summary>
             <ul>
-                <li><strong>Special Events & UFO System (Latest):</strong> Meteor showers, eclipses, migration waves, and UFO encounters! All with mushroom mode support.</li>
+                <li><strong>Final Polish & Sleep System (Latest):</strong> Birds now sleep at night with floating "ZzZz", improved perching (80%), minimal flying (2%), 8 colorful koi varieties, 95% accurate weather forecasts, smooth sky gradients, realistic wind chime timing (15-45s), baby bird hover info, and perfected camera centering!</li>
+                <li><strong>Special Events & UFO System:</strong> Meteor showers, eclipses, migration waves, and UFO encounters! All with mushroom mode support.</li>
                 <li><strong>Fireflies & Night Life:</strong> Glowing fireflies appear on some nights, creating a magical nighttime ecosystem.</li>
                 <li><strong>Advanced Mechanics:</strong> Food caching, nest degradation, mushroom clusters, fallen branches, and rare bird color variants!</li>
                 <li><strong>Hourly Musical Chimes:</strong> When clock is enabled, birds sing a different melody every hour from a rotating playlist of 24 songs. No repeats until all 24 are played!</li>
@@ -2428,8 +2435,8 @@ function createFlower(x, y) {
                 swingAmplitude: 0.1 + Math.random() * 0.1,
                 tubeCount: 4 + Math.floor(Math.random() * 3), // 4-6 tubes
                 treeId: null, // Will be set to tree reference
-                lastChimeTime: 0,
-                chimeInterval: 3000 + Math.random() * 5000 // Chime every 3-8 seconds when windy
+                lastChimeTime: Date.now(), // Initialize to current time
+                chimeInterval: 15000 + Math.random() * 30000 // Chime every 15-45 seconds (realistic timing)
             };
 
             return windChime;
@@ -9217,10 +9224,19 @@ if ((isRaining || timeOfDay >= 1) && Math.random() < 0.4) { // 40% chance to see
                             }
 
                             // Leave perch after a while or if hungry
-                            if (this.stateTimer > BIRD_STATE_DURATION.PERCHED || 
-                                this.hunger > HUNGER_CRITICAL_THRESHOLD - 50 || 
+                            // NEW: Transition to sleeping at night
+                            const isNightTime = timeOfDay >= 1;
+                            if (isNightTime && Math.random() < 0.05) { // 5% chance to fall asleep at night
+                                this.state = BIRD_STATES.SLEEPING;
+                                this.stateTimer = 0;
+                                debugLog(`${getBirdName(this)} fell asleep on perch`);
+                                break;
+                            }
+
+                            if (this.stateTimer > BIRD_STATE_DURATION.PERCHED ||
+                                this.hunger > HUNGER_CRITICAL_THRESHOLD - 50 ||
                                 Math.random() < 0.002) { // Reduced chance to leave perch early
-                                
+
                                 // Decide what to do next
                                 if (this.hunger > HUNGER_CRITICAL_THRESHOLD - 50) {
                                     // Go find food
@@ -9966,6 +9982,40 @@ if ((isRaining || timeOfDay >= 1) && Math.random() < 0.4) { // 40% chance to see
                                         100 + Math.random() * (canvas.height * 0.3)
                                     );
                                 }
+                            }
+                        }
+                        break;
+
+                    case BIRD_STATES.SLEEPING:
+                        // Birds sleep while perched at night
+                        // Stay completely still with no movement
+                        this.velocity.x = 0;
+                        this.velocity.y = 0;
+                        this.acceleration.x = 0;
+                        this.acceleration.y = 0;
+
+                        // Wake up if:
+                        // 1. It becomes daytime
+                        // 2. State timer exceeds duration (30-60 seconds with variation)
+                        // 3. Very hungry
+                        // 4. Danger nearby
+                        const isDaytime = timeOfDay < 1;
+                        const nearbyDanger = rats.some(rat => distance(rat.x, rat.y, this.x, this.y) < 100) ||
+                                           owls.some(owl => distance(owl.x, owl.y, this.x, this.y) < 150);
+
+                        if (isDaytime ||
+                            this.stateTimer > BIRD_STATE_DURATION.SLEEPING ||
+                            this.hunger > HUNGER_CRITICAL_THRESHOLD ||
+                            nearbyDanger) {
+
+                            // Wake up and return to perching
+                            this.state = BIRD_STATES.PERCHED;
+                            this.stateTimer = 0;
+                            debugLog(`${getBirdName(this)} woke up from sleep`);
+
+                            // If no perch target, find one
+                            if (!this.perchTarget) {
+                                this.findPerch();
                             }
                         }
                         break;
@@ -11073,7 +11123,38 @@ ctx.fill();
                     ctx.fillRect(-2, -2, 15, 2);
                     ctx.restore();
                 }
-                
+
+                // Draw "ZzZz" above sleeping birds
+                if (this.state === BIRD_STATES.SLEEPING) {
+                    const time = Date.now() / 1000;
+                    ctx.save();
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    // Multiple "z" letters that float upward
+                    for (let i = 0; i < 3; i++) {
+                        const offset = (time * 0.5 + i * 0.7) % 2; // Cycles every 2 seconds
+                        const floatY = this.y - 20 - (offset * 15); // Float up 15px
+                        const opacity = 1 - (offset / 2); // Fade out as they float up
+                        const size = 12 + i * 3; // Larger z's as they go up
+
+                        ctx.globalAlpha = opacity;
+                        ctx.font = `bold ${size}px Arial`;
+
+                        // White outline
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText('Z', this.x + (i - 1) * 8, floatY);
+
+                        // Dark blue fill
+                        ctx.fillStyle = '#4169E1'; // Royal blue
+                        ctx.fillText('Z', this.x + (i - 1) * 8, floatY);
+                    }
+
+                    ctx.restore();
+                }
+
                 // Debug info
                 if (debugVisuals) {
                  // Vision radius
