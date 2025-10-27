@@ -7388,7 +7388,7 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
         }
 
         // Spawn food more naturally
-        function scatterFood(x, y, count = 5) {
+        function scatterFood(x, y, count = 5, playerAdded = false) {
             const types = ['seed', 'berry', 'crumb'];
             const groundY = canvas.height * GROUND_HEIGHT_RATIO;
 
@@ -7423,7 +7423,8 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                         y: foodY,
                         type: types[Math.floor(Math.random() * types.length)],
                         timer: 0,
-                        spawnTime: Date.now() // Track age for cleanup
+                        spawnTime: Date.now(), // Track age for cleanup
+                        playerAdded: playerAdded // Track if player added this food (higher bird priority)
                     });
                 }
             }
@@ -7919,6 +7920,37 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 }
 
                 // If no worms found, try to find food items
+                // PRIORITY #1: Check for player-added food with 2x vision radius
+                if (!foundFood) {
+                    for (const food of foodItems) {
+                        if (food.playerAdded &&
+                            distance(this.x, this.y, food.x, food.y) < visionRadius * 2 &&
+                            !this.isDangerZone(food.x, food.y)) {
+                            this.target = {
+                                type: 'food',
+                                food: food,
+                                x: food.x,
+                                y: food.y
+                            };
+                            this.state = BIRD_STATES.HUNTING;
+                            this.stateTimer = 0;
+                            foundFood = true;
+
+                            // Add to memory
+                            this.foodMemory.push({x: food.x, y: food.y, timestamp: now});
+
+                            // Make food call
+                            if (Math.random() < 0.3) {
+                                this.makeFoodCall(food.x, food.y);
+                            }
+
+                            debugLog(`Bird found PLAYER-ADDED food at (${food.x}, ${food.y}) - prioritized!`);
+                            break;
+                        }
+                    }
+                }
+
+                // PRIORITY #2: Check for regular food items with normal vision radius
                 if (!foundFood) {
                     for (const food of foodItems) {
                         if (distance(this.x, this.y, food.x, food.y) < visionRadius &&
@@ -17300,38 +17332,38 @@ function spawnOwls() {
                 // Different note styles based on chirp type
                 let noteSymbol = '♪';
                 let noteColor = '#000000';
-                let noteSize = 16;
+                let noteSize = 20; // Increased by 25% from 16
 
                 switch(chirp.type) {
                     case CHIRP_TYPES.SOCIAL:
                         noteSymbol = '♪';
                         noteColor = '#4CAF50'; // Green
-                        noteSize = 14;
+                        noteSize = 17.5; // Increased by 25% from 14
                         break;
                     case CHIRP_TYPES.FOOD_CALL:
                         noteSymbol = '♫';
                         noteColor = '#FF9800'; // Orange
-                        noteSize = 18;
+                        noteSize = 22.5; // Increased by 25% from 18
                         break;
                     case CHIRP_TYPES.CONTACT_CALL:
                         noteSymbol = '♪';
                         noteColor = '#2196F3'; // Blue
-                        noteSize = 12;
+                        noteSize = 15; // Increased by 25% from 12
                         break;
                     case CHIRP_TYPES.ALERT:
                         noteSymbol = '♬';
                         noteColor = '#F44336'; // Red
-                        noteSize = 20;
+                        noteSize = 25; // Increased by 25% from 20
                         break;
                     case CHIRP_TYPES.TERRITORIAL:
                         noteSymbol = '♩';
                         noteColor = '#9C27B0'; // Purple
-                        noteSize = 16;
+                        noteSize = 20; // Increased by 25% from 16
                         break;
                     case CHIRP_TYPES.VICTORY:
                         noteSymbol = '♫♪';
                         noteColor = '#FFD700'; // Gold
-                        noteSize = 20;
+                        noteSize = 25; // Increased by 25% from 20
                         break;
                 }
 
@@ -17351,7 +17383,6 @@ function spawnOwls() {
                 ctx.save();
                 ctx.globalAlpha = opacity;
                 ctx.font = `bold ${noteSize}px Arial`;
-                ctx.fillStyle = noteColor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
@@ -17363,8 +17394,23 @@ function spawnOwls() {
                 if (mushroomMode) {
                     ctx.translate(chirp.x + wobble, chirp.y - 20 - floatUp);
                     ctx.rotate((progress * 360 * Math.PI) / 180); // Full rotation
+
+                    // Draw white outline for better visibility
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(noteSymbol, 0, 0);
+
+                    // Draw colored fill
+                    ctx.fillStyle = noteColor;
                     ctx.fillText(noteSymbol, 0, 0);
                 } else {
+                    // Draw white outline for better visibility
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(noteSymbol, chirp.x + wobble, chirp.y - 20 - floatUp);
+
+                    // Draw colored fill
+                    ctx.fillStyle = noteColor;
                     ctx.fillText(noteSymbol, chirp.x + wobble, chirp.y - 20 - floatUp);
                 }
 
@@ -20116,8 +20162,8 @@ if (gameboy) {
         }
     }
     
-    // Use the scaled coordinates
-    scatterFood(scaledX, scaledY, 3);
+    // Use the scaled coordinates - mark as player-added for bird priority
+    scatterFood(scaledX, scaledY, 3, true);
     debugLog(`Food scattered at web coordinates (${scaledX}, ${scaledY})`);
 });
 
