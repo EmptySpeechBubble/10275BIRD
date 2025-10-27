@@ -9124,19 +9124,19 @@ if ((isRaining || timeOfDay >= 1) && Math.random() < 0.4) { // 40% chance to see
                             const dx = this.perchTarget.x - this.x;
                             const dy = this.perchTarget.y - this.y;
                             const perchDir = normalize(dx, dy);
-                            
-                            this.applyForce({ 
-                                x: perchDir.x * 0.01, 
-                                y: perchDir.y * 0.01 
+
+                            this.applyForce({
+                                x: perchDir.x * 0.01,
+                                y: perchDir.y * 0.01
                             });
-                            
-                            // Slow down as we approach the perch
-                            const slowdownFactor = Math.min(1, perchDist / 30);
-                            this.velocity.x *= Math.min(AIR_RESISTANCE, 0.95 + slowdownFactor * 0.04);
-                            this.velocity.y *= Math.min(AIR_RESISTANCE, 0.95 + slowdownFactor * 0.04);
-                            
+
+                            // Slow down as we approach the perch (minimal slowdown to maintain speed)
+                            const slowdownFactor = Math.min(1, perchDist / 100);
+                            this.velocity.x *= Math.min(AIR_RESISTANCE, 0.97 + slowdownFactor * 0.02);
+                            this.velocity.y *= Math.min(AIR_RESISTANCE, 0.97 + slowdownFactor * 0.02);
+
                             // If perching is taking too long, give up
-                            if (this.stateTimer > 10000) {
+                            if (this.stateTimer > 30000) {
                                 this.state = BIRD_STATES.FLYING;
                                 this.stateTimer = 0;
                                 this.perchTarget = null;
