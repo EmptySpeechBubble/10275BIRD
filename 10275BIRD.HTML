@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Garden View Ecosystem</title>
+    <title>Bird Window</title>
     <style>
         html, body {
     width: 100%;
@@ -372,12 +372,14 @@
         <details class="detail-section">
             <summary>🐦 Bird Behavior Systems</summary>
             <ul>
-                <li><strong>States:</strong> Birds transition between Flying, Perched, Hopping, Pecking, Bathing, Feeding babies, Building nests, and Fleeing</li>
-                <li><strong>Hunger:</strong> Birds actively seek food when hungry (worms, seeds, berries)</li>
+                <li><strong>States:</strong> Birds transition between Flying, Perched, Hopping, Pecking, Bathing, Sleeping, Feeding babies, Building nests, and Fleeing</li>
+                <li><strong>Sleeping:</strong> Birds fall asleep at night while perched, showing floating "ZzZz" above them. They wake at dawn or if danger approaches</li>
+                <li><strong>Hunger:</strong> Birds actively seek food when hungry (worms, seeds, berries). Player-added food gets 2x priority!</li>
                 <li><strong>Nesting:</strong> Non-wild birds collect twigs to build nests in trees. Special golden twigs speed up construction</li>
                 <li><strong>Parenting:</strong> Adult birds feed hungry baby birds, prioritizing critically hungry ones</li>
                 <li><strong>Flocking:</strong> Birds of similar types recognize each other and coordinate behaviors</li>
                 <li><strong>Ground behavior:</strong> Birds spend significant time hopping and pecking on the ground, foraging naturally</li>
+                <li><strong>Calm vibe:</strong> Birds perch 80% of the time and fly only 2% of the time for a peaceful atmosphere</li>
             </ul>
         </details>
 
@@ -418,7 +420,7 @@
             <ul>
                 <li><strong>Puddles:</strong> Form during rain, birds bathe in them, evaporate over time</li>
                 <li><strong>Ponds:</strong> Permanent water sources (10% chance to spawn on load or after 5 rains)</li>
-                <li><strong>Koi fish:</strong> Swim in ponds, get excited when birds approach, and may jump out of water!</li>
+                <li><strong>Koi fish:</strong> Swim in ponds in 8 traditional colors (orange-red, gold, crimson, brown, slate grey), get excited when birds approach, and may jump out of water!</li>
                 <li><strong>Frogs:</strong> Live near ponds, jump away from birds, croak warnings, catch ants</li>
                 <li><strong>Bird interactions:</strong> Birds visit ponds to drink and bathe, can hop below ground to reach them</li>
             </ul>
@@ -448,11 +450,13 @@
         <details class="detail-section">
             <summary>☁️ Weather & Time</summary>
             <ul>
-                <li><strong>Day/Night cycle:</strong> ~4 minutes per full cycle</li>
+                <li><strong>Day/Night cycle:</strong> ~4 minutes per full cycle (perfectly balanced!)</li>
                 <li><strong>Rain:</strong> Spawns puddles and worms, birds seek shelter</li>
                 <li><strong>Thunder:</strong> Can occur during heavy rain with lightning strikes</li>
                 <li><strong>Rainbow:</strong> Rare, appears after rain with right conditions</li>
-                <li><strong>Night behaviors:</strong> Worms emerge, owls hunt, birds shelter in birdhouses</li>
+                <li><strong>Weather Forecast:</strong> 3-icon forecast in clock display with 95% accuracy</li>
+                <li><strong>Sky gradient:</strong> Smooth 3-color gradients for atmospheric perspective</li>
+                <li><strong>Night behaviors:</strong> Worms emerge, owls hunt, birds sleep and shelter in birdhouses</li>
             </ul>
         </details>
 
@@ -548,7 +552,9 @@
                 <li><strong>Spawn Chance:</strong> 10% chance for wind chimes to appear at game start (hanging from trees)</li>
                 <li><strong>Owl Delivery:</strong> After day 15, owls may deliver wind chimes at night</li>
                 <li><strong>Visual Design:</strong> Metallic chimes with 4-6 tubes that sway gently in the breeze</li>
-                <li><strong>Musical Sounds:</strong> Chimes play pleasant notes periodically (mute button compatible)</li>
+                <li><strong>Musical Sounds:</strong> Chimes play pleasant notes every 15-45 seconds (realistic timing, mute button compatible)</li>
+                <li><strong>Creature Interactions:</strong> Birds, squirrels, rats, and owls trigger chimes when passing through</li>
+                <li><strong>Tree Dependency:</strong> Falls gracefully if tree disappears, owl may deliver replacement after 15 days</li>
                 <li><strong>Aesthetic:</strong> Adds calm, meditative atmosphere to your garden</li>
             </ul>
         </details>
@@ -556,7 +562,8 @@
         <details class="detail-section">
             <summary>📋 Recent Major Updates</summary>
             <ul>
-                <li><strong>Special Events & UFO System (Latest):</strong> Meteor showers, eclipses, migration waves, and UFO encounters! All with mushroom mode support.</li>
+                <li><strong>Final Polish & Sleep System (Latest):</strong> Birds now sleep at night with floating "ZzZz", improved perching (80%), minimal flying (2%), 8 colorful koi varieties, 95% accurate weather forecasts, smooth sky gradients, realistic wind chime timing (15-45s), baby bird hover info, and perfected camera centering!</li>
+                <li><strong>Special Events & UFO System:</strong> Meteor showers, eclipses, migration waves, and UFO encounters! All with mushroom mode support.</li>
                 <li><strong>Fireflies & Night Life:</strong> Glowing fireflies appear on some nights, creating a magical nighttime ecosystem.</li>
                 <li><strong>Advanced Mechanics:</strong> Food caching, nest degradation, mushroom clusters, fallen branches, and rare bird color variants!</li>
                 <li><strong>Hourly Musical Chimes:</strong> When clock is enabled, birds sing a different melody every hour from a rotating playlist of 24 songs. No repeats until all 24 are played!</li>
@@ -1588,7 +1595,10 @@ let ants = [];
         let mouseX = 0;
         let mouseY = 0;
         let hoveredBird = null;
+        let hoveredBabyBird = null; // Track hovered baby birds
         let hoveredTree = null;
+        let hoveredTreeStartTime = 0; // Track when tree hover started
+        const TREE_HOVER_TIMEOUT = 10000; // 10 seconds
         let lockedAnimal = null; // Can be bird, squirrel, rat, crow, owl, or tree
         let lockedAnimalType = null; // Type of locked animal
         let lockedAnimalTime = 0; // Track when animal was locked for auto-fade
@@ -1859,8 +1869,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         const BIRD_POOP_DELAY = 360000; // 6 minutes between poops
         const TREE_DEGRADATION_RATE = 0.25;
         const TREE_HEALTH_THRESHOLD = 0;
-        const BIRD_VISION_RADIUS = 500;
-        const BIRD_FOOD_VISION_RADIUS = 1080; // Reduced by ~10% from 1200
+        const BIRD_VISION_RADIUS = 400; // Reduced from 500 for better gameplay balance
+        const BIRD_FOOD_VISION_RADIUS = 800; // Reduced from 1080 for better balance
         const RAT_VISION_RADIUS = 80;
         const SQUIRREL_VISION_RADIUS = 70;
         const STAR_COUNT = 100;
@@ -1890,7 +1900,7 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         const LIGHTNING_CHANCE = 0.3; // 30% chance of lightning during rain
         const LIGHTNING_TREE_DAMAGE = 70; // Damage to tree from lightning
         const SPECIAL_TWIG_CHANCE = 0.7; // 70% chance of a twig being special after lightning
-        const RAIN_PROBABILITY = 0.25; // changed 
+        const RAIN_PROBABILITY = 0.95; // 95% accuracy for weather forecast 
         const MAX_BIRDS = 50;
         const MAX_FOOD = 50; // REDUCED from 70 - encourage consumption
         const MAX_SPEED = 5; // Maximum speed for moving entities
@@ -1924,9 +1934,9 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         
         // V26: Adjusted bird behavior preferences for more perching and resting
         const BIRD_STATE_PREFERENCES = {
-            PERCHING: 0.65,    // Reduced slightly to make room for more ground activity
+            PERCHING: 0.80,    // Increased from 0.65 - birds perch much more for calm vibe
     RESTING: 0.20,
-    FLYING: 0.05,      // Decreased from 0.10 - even less flying
+    FLYING: 0.02,      // Decreased from 0.05 - minimal flying for calm atmosphere
     FEEDING: 0.25,     // Increased for more ground foraging
     FORAGING: 0.09,
     BUILDING: 0.015,
@@ -1958,7 +1968,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
     PREENING: 15000,    // 15 seconds - grooming session
     DRINKING: 3000,     // 3 seconds - quick drink
     ALARM: 800,         // 0.8 seconds - brief freeze before action
-    NEST_SITTING: 180000 // 3 minutes - sitting on nest
+    NEST_SITTING: 180000, // 3 minutes - sitting on nest
+    SLEEPING: 60000     // 60 seconds - sleeping (30-40 sec average with variation)
         };
         
         // Morning food spawn rates
@@ -2019,7 +2030,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
             PREENING: 'preening', // Grooming feathers
             DRINKING: 'drinking', // Drinking water (separate from bathing)
             ALARM: 'alarm', // Freeze response before fleeing
-            NEST_SITTING: 'nest_sitting' // Incubating/warming nest
+            NEST_SITTING: 'nest_sitting', // Incubating/warming nest
+            SLEEPING: 'sleeping' // Sleeping at night or during rest
         };
         
         const BIRDHOUSE_MATERIALS_NEEDED = 5;
@@ -2423,8 +2435,8 @@ function createFlower(x, y) {
                 swingAmplitude: 0.1 + Math.random() * 0.1,
                 tubeCount: 4 + Math.floor(Math.random() * 3), // 4-6 tubes
                 treeId: null, // Will be set to tree reference
-                lastChimeTime: 0,
-                chimeInterval: 3000 + Math.random() * 5000 // Chime every 3-8 seconds when windy
+                lastChimeTime: Date.now(), // Initialize to current time
+                chimeInterval: 15000 + Math.random() * 30000 // Chime every 15-45 seconds (realistic timing)
             };
 
             return windChime;
@@ -2514,7 +2526,7 @@ function createFlower(x, y) {
                     });
                 }
 
-                // Random gentle chiming when wind chimes are enabled
+                // Random gentle chiming when wind chimes are enabled (like real wind chimes)
                 if (windChimeEnabled && audioContext) {
                     const now = Date.now();
                     if (now - chime.lastChimeTime > chime.chimeInterval) {
@@ -2523,7 +2535,7 @@ function createFlower(x, y) {
                         const randomNote = chimeNotes[Math.floor(Math.random() * chimeNotes.length)];
                         playNote(randomNote, 0.3); // Soft volume
                         chime.lastChimeTime = now;
-                        chime.chimeInterval = 3000 + Math.random() * 5000; // Reset interval
+                        chime.chimeInterval = 15000 + Math.random() * 30000; // 15-45 seconds for realistic timing
                     }
                 }
             });
@@ -2737,10 +2749,24 @@ function createFlower(x, y) {
 
         function drawFireflies() {
             fireflies.forEach(firefly => {
+                // Validate firefly position and properties (fix NaN crash)
+                if (!isFinite(firefly.x) || !isFinite(firefly.y) ||
+                    !isFinite(firefly.size) || !isFinite(firefly.glowIntensity)) {
+                    debugLog("Invalid firefly detected, skipping draw", DEBUG_LEVELS.WARNING);
+                    return;
+                }
+
                 ctx.save();
 
                 // Draw glow effect (same as UFO will use)
                 const glowRadius = firefly.size * 3 * firefly.glowIntensity;
+
+                // Additional safety check for glowRadius
+                if (!isFinite(glowRadius) || glowRadius <= 0) {
+                    ctx.restore();
+                    return;
+                }
+
                 const gradient = ctx.createRadialGradient(
                     firefly.x, firefly.y, 0,
                     firefly.x, firefly.y, glowRadius
@@ -3566,21 +3592,33 @@ if (rainsCompleted >= 5 && ponds.length === 0) {
     addDiaryEntry("A pond has formed in the garden! Koi and frogs move in.", 'milestone');
 
     // Spawn a couple of koi in the pond
+    // Traditional koi colors for variety
+    const koiColors = [
+        '#FF6B35', // Orange-red (Kohaku)
+        '#FFD700', // Gold (Yamabuki Ogon)
+        '#FF4500', // Deep orange
+        '#FFA500', // Bright orange
+        '#DC143C', // Crimson red
+        '#FF8C00', // Dark orange
+        '#8B4513', // Brown (Chagoi)
+        '#708090'  // Slate grey (Asagi)
+    ];
+
     koi.push({
-        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
         x: pondX,
         y: pondY,
         pondIndex: 0,
         swimAngle: Math.random() * Math.PI * 2,
-        color: '#FF6B00'
+        color: koiColors[Math.floor(Math.random() * koiColors.length)]
     });
     koi.push({
-        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
         x: pondX,
         y: pondY,
         pondIndex: 0,
         swimAngle: Math.random() * Math.PI * 2,
-        color: '#FFD700'
+        color: koiColors[Math.floor(Math.random() * koiColors.length)]
     });
 
     // Spawn a frog near the pond
@@ -4919,7 +4957,25 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 skyColor = `hsl(${260 - (timeOfDay - 1) * 60}, 70%, ${40 - (timeOfDay - 1) * 20}%)`;
             }
 
-            ctx.fillStyle = skyColor;
+            // Create smooth gradient instead of solid color for more natural sky
+            const skyGradient = ctx.createLinearGradient(0, -canvas.height, 0, canvas.height * GROUND_HEIGHT_RATIO);
+
+            // Top of sky (darker/more saturated)
+            skyGradient.addColorStop(0, skyColor);
+
+            // Middle transition (slightly lighter)
+            const middleColor = skyColor.replace(/(\d+)%\)$/, (match, p1) => {
+                return `${Math.min(100, parseInt(p1) + 10)}%)`;
+            });
+            skyGradient.addColorStop(0.5, middleColor);
+
+            // Bottom of sky near horizon (lighter/less saturated for atmospheric perspective)
+            const horizonColor = skyColor.replace(/(\d+)%, (\d+)%\)$/, (match, p1, p2) => {
+                return `${Math.max(0, parseInt(p1) - 15)}%, ${Math.min(100, parseInt(p2) + 15)}%)`;
+            });
+            skyGradient.addColorStop(1, horizonColor);
+
+            ctx.fillStyle = skyGradient;
             // FIXED: Extend sky to cover entire canvas even when camera is zoomed/panned
             // Draw a much larger rectangle to prevent whitespace when locked on
             ctx.fillRect(-canvas.width, -canvas.height, canvas.width * 3, canvas.height * GROUND_HEIGHT_RATIO * 3);
@@ -5131,7 +5187,7 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
 
         // Enhanced: Draw bird interaction UI (hover labels and lock-on effects)
         function drawBirdInteractionUI() {
-            // Draw hover label
+            // Draw hover label for adult birds
             if (hoveredBird) {
                 const birdName = getBirdName(hoveredBird);
                 const birdType = hoveredBird.birdType.name;
@@ -5171,16 +5227,58 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 ctx.stroke();
             }
 
-            // FIXED: Draw hover info for trees
-            if (hoveredTree) {
-                const treeName = getTreeName(hoveredTree);
-                const healthPercent = Math.round(hoveredTree.health);
-                const ageDays = Math.round(hoveredTree.age / dayNightDuration);
-                const labelText = `${treeName} (HP: ${healthPercent}%, Age: ${ageDays} days)`;
+            // Draw hover label for baby birds
+            if (hoveredBabyBird) {
+                const hungerLevel = Math.max(0, 100 - (hoveredBabyBird.timeSinceLastMeal / 4.2));
+                const labelText = `Baby ${hoveredBabyBird.birdType.name} (Hunger: ${Math.round(hungerLevel)}%, Age: ${Math.round(hoveredBabyBird.age)}s, Fed: ${hoveredBabyBird.feedCount}x)`;
 
-                // Position label above tree crown
-                const labelX = hoveredTree.x;
-                const labelY = hoveredTree.y - hoveredTree.trunkHeight - hoveredTree.leafRadius - 20;
+                // Position label above baby bird
+                const labelX = hoveredBabyBird.x;
+                const labelY = hoveredBabyBird.y - 30;
+
+                // Measure text for background sizing
+                ctx.font = 'bold 13px Arial';
+                const textMetrics = ctx.measureText(labelText);
+                const padding = 8;
+                const bgWidth = textMetrics.width + padding * 2;
+                const bgHeight = 20;
+
+                // Draw background with high contrast
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(labelX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
+
+                // Draw border for visibility
+                ctx.strokeStyle = 'rgba(255, 200, 200, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(labelX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
+
+                // Draw text in high-contrast color
+                ctx.fillStyle = '#FFE0E0'; // Slight pink for baby birds
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(labelText, labelX, labelY);
+
+                // Draw slight highlight circle around hovered baby bird
+                ctx.strokeStyle = 'rgba(255, 200, 200, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(hoveredBabyBird.x, hoveredBabyBird.y, 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // FIXED: Draw hover info for trees with 10-second timeout
+            if (hoveredTree && hoveredTreeStartTime > 0) {
+                // Check if timeout has elapsed (10 seconds)
+                const elapsed = Date.now() - hoveredTreeStartTime;
+                if (elapsed < TREE_HOVER_TIMEOUT) {
+                    const treeName = getTreeName(hoveredTree);
+                    const healthPercent = Math.round(hoveredTree.health);
+                    const ageDays = Math.round(hoveredTree.age / dayNightDuration);
+                    const labelText = `${treeName} (HP: ${healthPercent}%, Age: ${ageDays} days)`;
+
+                    // Position label above tree crown
+                    const labelX = hoveredTree.x;
+                    const labelY = hoveredTree.y - hoveredTree.trunkHeight - hoveredTree.leafRadius - 20;
 
                 // Measure text for background sizing
                 ctx.font = 'bold 14px Arial';
@@ -5204,13 +5302,14 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 ctx.textBaseline = 'middle';
                 ctx.fillText(labelText, labelX, labelY);
 
-                // Draw slight highlight circle around hovered tree crown
-                ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(hoveredTree.x, hoveredTree.y - hoveredTree.trunkHeight, hoveredTree.leafRadius * hoveredTree.scale + 10, 0, Math.PI * 2);
-                ctx.stroke();
-            }
+                    // Draw slight highlight circle around hovered tree crown
+                    ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(hoveredTree.x, hoveredTree.y - hoveredTree.trunkHeight, hoveredTree.leafRadius * hoveredTree.scale + 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                } // End timeout check
+            } // End hoveredTree check
 
             // Draw locked animal indicator and follow camera
             if (lockedAnimal && lockedAnimalType) {
@@ -7161,6 +7260,8 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 const treeIndex = trees.indexOf(tree);
                 const shouldRemove = tree.degrade(deltaTime);
                 if (shouldRemove) {
+                    // Remove nests associated with this tree (fix floating nest bug)
+                    nests = nests.filter(nest => nest.tree !== tree);
                     trees.splice(treeIndex, 1);
                 } else {
                     tree.draw();
@@ -7185,6 +7286,9 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 
                 // Remove it if health is below threshold
                 if (leastHealthyIndex !== -1 && lowestHealth < 40) {
+                    const removedTree = trees[leastHealthyIndex];
+                    // Remove nests associated with this tree (fix floating nest bug)
+                    nests = nests.filter(nest => nest.tree !== removedTree);
                     debugLog(`Removing unhealthy tree at index ${leastHealthyIndex} with health ${lowestHealth}`);
                     trees.splice(leastHealthyIndex, 1);
                 }
@@ -7367,7 +7471,7 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
         }
 
         // Spawn food more naturally
-        function scatterFood(x, y, count = 5) {
+        function scatterFood(x, y, count = 5, playerAdded = false) {
             const types = ['seed', 'berry', 'crumb'];
             const groundY = canvas.height * GROUND_HEIGHT_RATIO;
 
@@ -7402,7 +7506,8 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                         y: foodY,
                         type: types[Math.floor(Math.random() * types.length)],
                         timer: 0,
-                        spawnTime: Date.now() // Track age for cleanup
+                        spawnTime: Date.now(), // Track age for cleanup
+                        playerAdded: playerAdded // Track if player added this food (higher bird priority)
                     });
                 }
             }
@@ -7483,7 +7588,7 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
 
                 // === NEW BEHAVIOR PROPERTIES ===
                 // Unique ID for tracking
-                this.id = Math.random().toString(36).substr(2, 9);
+                this.id = Math.random().toString(36).substring(2, 11);
 
                 // Flocking and social behavior
                 this.flockId = null; // Assigned when bird joins a flock
@@ -7898,6 +8003,37 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 }
 
                 // If no worms found, try to find food items
+                // PRIORITY #1: Check for player-added food with 2x vision radius
+                if (!foundFood) {
+                    for (const food of foodItems) {
+                        if (food.playerAdded &&
+                            distance(this.x, this.y, food.x, food.y) < visionRadius * 2 &&
+                            !this.isDangerZone(food.x, food.y)) {
+                            this.target = {
+                                type: 'food',
+                                food: food,
+                                x: food.x,
+                                y: food.y
+                            };
+                            this.state = BIRD_STATES.HUNTING;
+                            this.stateTimer = 0;
+                            foundFood = true;
+
+                            // Add to memory
+                            this.foodMemory.push({x: food.x, y: food.y, timestamp: now});
+
+                            // Make food call
+                            if (Math.random() < 0.3) {
+                                this.makeFoodCall(food.x, food.y);
+                            }
+
+                            debugLog(`Bird found PLAYER-ADDED food at (${food.x}, ${food.y}) - prioritized!`);
+                            break;
+                        }
+                    }
+                }
+
+                // PRIORITY #2: Check for regular food items with normal vision radius
                 if (!foundFood) {
                     for (const food of foodItems) {
                         if (distance(this.x, this.y, food.x, food.y) < visionRadius &&
@@ -9088,10 +9224,19 @@ if ((isRaining || timeOfDay >= 1) && Math.random() < 0.4) { // 40% chance to see
                             }
 
                             // Leave perch after a while or if hungry
-                            if (this.stateTimer > BIRD_STATE_DURATION.PERCHED || 
-                                this.hunger > HUNGER_CRITICAL_THRESHOLD - 50 || 
+                            // NEW: Transition to sleeping at night
+                            const isNightTime = timeOfDay >= 1;
+                            if (isNightTime && Math.random() < 0.05) { // 5% chance to fall asleep at night
+                                this.state = BIRD_STATES.SLEEPING;
+                                this.stateTimer = 0;
+                                debugLog(`${getBirdName(this)} fell asleep on perch`);
+                                break;
+                            }
+
+                            if (this.stateTimer > BIRD_STATE_DURATION.PERCHED ||
+                                this.hunger > HUNGER_CRITICAL_THRESHOLD - 50 ||
                                 Math.random() < 0.002) { // Reduced chance to leave perch early
-                                
+
                                 // Decide what to do next
                                 if (this.hunger > HUNGER_CRITICAL_THRESHOLD - 50) {
                                     // Go find food
@@ -9837,6 +9982,40 @@ if ((isRaining || timeOfDay >= 1) && Math.random() < 0.4) { // 40% chance to see
                                         100 + Math.random() * (canvas.height * 0.3)
                                     );
                                 }
+                            }
+                        }
+                        break;
+
+                    case BIRD_STATES.SLEEPING:
+                        // Birds sleep while perched at night
+                        // Stay completely still with no movement
+                        this.velocity.x = 0;
+                        this.velocity.y = 0;
+                        this.acceleration.x = 0;
+                        this.acceleration.y = 0;
+
+                        // Wake up if:
+                        // 1. It becomes daytime
+                        // 2. State timer exceeds duration (30-60 seconds with variation)
+                        // 3. Very hungry
+                        // 4. Danger nearby
+                        const isDaytime = timeOfDay < 1;
+                        const nearbyDanger = rats.some(rat => distance(rat.x, rat.y, this.x, this.y) < 100) ||
+                                           owls.some(owl => distance(owl.x, owl.y, this.x, this.y) < 150);
+
+                        if (isDaytime ||
+                            this.stateTimer > BIRD_STATE_DURATION.SLEEPING ||
+                            this.hunger > HUNGER_CRITICAL_THRESHOLD ||
+                            nearbyDanger) {
+
+                            // Wake up and return to perching
+                            this.state = BIRD_STATES.PERCHED;
+                            this.stateTimer = 0;
+                            debugLog(`${getBirdName(this)} woke up from sleep`);
+
+                            // If no perch target, find one
+                            if (!this.perchTarget) {
+                                this.findPerch();
                             }
                         }
                         break;
@@ -10944,7 +11123,38 @@ ctx.fill();
                     ctx.fillRect(-2, -2, 15, 2);
                     ctx.restore();
                 }
-                
+
+                // Draw "ZzZz" above sleeping birds
+                if (this.state === BIRD_STATES.SLEEPING) {
+                    const time = Date.now() / 1000;
+                    ctx.save();
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+
+                    // Multiple "z" letters that float upward
+                    for (let i = 0; i < 3; i++) {
+                        const offset = (time * 0.5 + i * 0.7) % 2; // Cycles every 2 seconds
+                        const floatY = this.y - 20 - (offset * 15); // Float up 15px
+                        const opacity = 1 - (offset / 2); // Fade out as they float up
+                        const size = 12 + i * 3; // Larger z's as they go up
+
+                        ctx.globalAlpha = opacity;
+                        ctx.font = `bold ${size}px Arial`;
+
+                        // White outline
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText('Z', this.x + (i - 1) * 8, floatY);
+
+                        // Dark blue fill
+                        ctx.fillStyle = '#4169E1'; // Royal blue
+                        ctx.fillText('Z', this.x + (i - 1) * 8, floatY);
+                    }
+
+                    ctx.restore();
+                }
+
                 // Debug info
                 if (debugVisuals) {
                  // Vision radius
@@ -11731,7 +11941,7 @@ class Squirrel {
                 }
 
                 // Random chance to knock a branch loose (becomes a twig on the ground)
-                if (Math.random() < 0.0008) { // Small random chance per frame
+                if (Math.random() < 0.0004) { // Reduced by 50% from 0.0008 to prevent branch pileup
                     const branchX = this.climbingTree.x + (Math.random() - 0.5) * 30;
                     const branchY = this.groundY - 5;
                     twigs.push({
@@ -17279,38 +17489,38 @@ function spawnOwls() {
                 // Different note styles based on chirp type
                 let noteSymbol = '♪';
                 let noteColor = '#000000';
-                let noteSize = 16;
+                let noteSize = 20; // Increased by 25% from 16
 
                 switch(chirp.type) {
                     case CHIRP_TYPES.SOCIAL:
                         noteSymbol = '♪';
                         noteColor = '#4CAF50'; // Green
-                        noteSize = 14;
+                        noteSize = 17.5; // Increased by 25% from 14
                         break;
                     case CHIRP_TYPES.FOOD_CALL:
                         noteSymbol = '♫';
                         noteColor = '#FF9800'; // Orange
-                        noteSize = 18;
+                        noteSize = 22.5; // Increased by 25% from 18
                         break;
                     case CHIRP_TYPES.CONTACT_CALL:
                         noteSymbol = '♪';
                         noteColor = '#2196F3'; // Blue
-                        noteSize = 12;
+                        noteSize = 15; // Increased by 25% from 12
                         break;
                     case CHIRP_TYPES.ALERT:
                         noteSymbol = '♬';
                         noteColor = '#F44336'; // Red
-                        noteSize = 20;
+                        noteSize = 25; // Increased by 25% from 20
                         break;
                     case CHIRP_TYPES.TERRITORIAL:
                         noteSymbol = '♩';
                         noteColor = '#9C27B0'; // Purple
-                        noteSize = 16;
+                        noteSize = 20; // Increased by 25% from 16
                         break;
                     case CHIRP_TYPES.VICTORY:
                         noteSymbol = '♫♪';
                         noteColor = '#FFD700'; // Gold
-                        noteSize = 20;
+                        noteSize = 25; // Increased by 25% from 20
                         break;
                 }
 
@@ -17330,7 +17540,6 @@ function spawnOwls() {
                 ctx.save();
                 ctx.globalAlpha = opacity;
                 ctx.font = `bold ${noteSize}px Arial`;
-                ctx.fillStyle = noteColor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
@@ -17342,8 +17551,23 @@ function spawnOwls() {
                 if (mushroomMode) {
                     ctx.translate(chirp.x + wobble, chirp.y - 20 - floatUp);
                     ctx.rotate((progress * 360 * Math.PI) / 180); // Full rotation
+
+                    // Draw white outline for better visibility
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(noteSymbol, 0, 0);
+
+                    // Draw colored fill
+                    ctx.fillStyle = noteColor;
                     ctx.fillText(noteSymbol, 0, 0);
                 } else {
+                    // Draw white outline for better visibility
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(noteSymbol, chirp.x + wobble, chirp.y - 20 - floatUp);
+
+                    // Draw colored fill
+                    ctx.fillStyle = noteColor;
                     ctx.fillText(noteSymbol, chirp.x + wobble, chirp.y - 20 - floatUp);
                 }
 
@@ -18105,15 +18329,16 @@ if (mushroomMode) {
 
     // Calculate camera offset to center on locked animal
     if (lockedAnimal) {
+        // Center bird at 40% from top (looks better than exact center)
         const targetOffsetX = canvas.width / 2 - lockedAnimal.x * cameraZoom;
-        const targetOffsetY = canvas.height / 2 - lockedAnimal.y * cameraZoom;
+        const targetOffsetY = canvas.height * 0.4 - lockedAnimal.y * cameraZoom;
         const panSpeed = 0.1; // Smooth panning
         cameraOffsetX += (targetOffsetX - cameraOffsetX) * panSpeed;
         cameraOffsetY += (targetOffsetY - cameraOffsetY) * panSpeed;
 
-        // FIXED: Clamp camera offset to prevent excessive whitespace
+        // FIXED: Increase vertical limit to allow better centering of low birds
         // Don't let camera pan too far from center to keep ground/sky visible
-        const maxOffsetY = canvas.height * 0.3; // Limit vertical panning
+        const maxOffsetY = canvas.height * 0.5; // Increased from 0.3 for better centering
         cameraOffsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, cameraOffsetY));
     } else {
         // Return to normal view
@@ -18760,13 +18985,14 @@ if (antHill) {
                     ripples: []
                 });
 
-                // Add 2 koi to the pond
+                // Add 2 koi to the pond with traditional colors
+                const koiColors = ['#FF6B35', '#FFD700', '#FF4500', '#FFA500', '#DC143C', '#FF8C00', '#8B4513', '#708090'];
                 for (let i = 0; i < 2; i++) {
                     koi.push({
-                        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+                        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
                         x: pondX,
                         y: pondY,
-                        color: ['#FF6B35', '#FFD23F', '#FFFFFF', '#FF006E'][Math.floor(Math.random() * 4)],
+                        color: koiColors[Math.floor(Math.random() * koiColors.length)],
                         swimAngle: Math.random() * Math.PI * 2,
                         pondIndex: ponds.length - 1
                     });
@@ -19290,7 +19516,7 @@ if (toggleMushroom) {
                     const newBirdhouse = new Birdhouse(x, y);
                     // CHANGE THIS LINE (make it incomplete so birds can build it):
                     newBirdhouse.isComplete = false; // Was true, now false
-                    newBirdhouse.materialsCollected = Math.floor(BIRDHOUSE_MATERIALS_NEEDED / 0); // Half built
+                    newBirdhouse.materialsCollected = Math.floor(BIRDHOUSE_MATERIALS_NEEDED / 2); // Half built
                     birdhouses.push(newBirdhouse);
                     
                     // Direct a bird to build it
@@ -19486,13 +19712,14 @@ spawnKoiBtn.addEventListener('click', () => {
         if (!koi) koi = [];
 
         const pond = ponds[0];
+        const koiColors = ['#FF6B35', '#FFD700', '#FF4500', '#FFA500', '#DC143C', '#FF8C00', '#8B4513', '#708090'];
         koi.push({
-            id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+            id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
             x: pond.x + pond.width / 2,
             y: pond.y + pond.height / 2,
             pondIndex: 0,
             swimAngle: Math.random() * Math.PI * 2,
-            color: '#FF6B00'
+            color: koiColors[Math.floor(Math.random() * koiColors.length)]
         });
 
         debugLog(`Koi spawned in pond`);
@@ -20095,8 +20322,8 @@ if (gameboy) {
         }
     }
     
-    // Use the scaled coordinates
-    scatterFood(scaledX, scaledY, 3);
+    // Use the scaled coordinates - mark as player-added for bird priority
+    scatterFood(scaledX, scaledY, 3, true);
     debugLog(`Food scattered at web coordinates (${scaledX}, ${scaledY})`);
 });
 
@@ -20121,7 +20348,23 @@ canvas.addEventListener('mousemove', (e) => {
         }
     }
 
-    // Find tree under cursor
+    // Find baby bird under cursor
+    hoveredBabyBird = null;
+    if (!hoveredBird) { // Only check baby birds if not hovering over an adult
+        for (const baby of babyBirds) {
+            const dist = Math.sqrt(
+                Math.pow(mouseX - baby.x, 2) +
+                Math.pow(mouseY - baby.y, 2)
+            );
+            if (dist < 15) { // 15px hover radius for smaller baby birds
+                hoveredBabyBird = baby;
+                break;
+            }
+        }
+    }
+
+    // Find tree under cursor with timeout support
+    const previousHoveredTree = hoveredTree;
     hoveredTree = null;
     for (const tree of trees) {
         const dist = Math.sqrt(
@@ -20130,8 +20373,16 @@ canvas.addEventListener('mousemove', (e) => {
         );
         if (dist < tree.trunkWidth * 2 + 50) { // Larger hover area for trees
             hoveredTree = tree;
+            // Reset timer if hovering over a different tree
+            if (previousHoveredTree !== tree) {
+                hoveredTreeStartTime = Date.now();
+            }
             break;
         }
+    }
+    // Clear timer if no longer hovering
+    if (!hoveredTree) {
+        hoveredTreeStartTime = 0;
     }
 });
 
