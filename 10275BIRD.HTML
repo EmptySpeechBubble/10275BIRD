@@ -1588,7 +1588,10 @@ let ants = [];
         let mouseX = 0;
         let mouseY = 0;
         let hoveredBird = null;
+        let hoveredBabyBird = null; // Track hovered baby birds
         let hoveredTree = null;
+        let hoveredTreeStartTime = 0; // Track when tree hover started
+        const TREE_HOVER_TIMEOUT = 10000; // 10 seconds
         let lockedAnimal = null; // Can be bird, squirrel, rat, crow, owl, or tree
         let lockedAnimalType = null; // Type of locked animal
         let lockedAnimalTime = 0; // Track when animal was locked for auto-fade
@@ -2516,7 +2519,7 @@ function createFlower(x, y) {
                     });
                 }
 
-                // Random gentle chiming when wind chimes are enabled
+                // Random gentle chiming when wind chimes are enabled (like real wind chimes)
                 if (windChimeEnabled && audioContext) {
                     const now = Date.now();
                     if (now - chime.lastChimeTime > chime.chimeInterval) {
@@ -2525,7 +2528,7 @@ function createFlower(x, y) {
                         const randomNote = chimeNotes[Math.floor(Math.random() * chimeNotes.length)];
                         playNote(randomNote, 0.3); // Soft volume
                         chime.lastChimeTime = now;
-                        chime.chimeInterval = 3000 + Math.random() * 5000; // Reset interval
+                        chime.chimeInterval = 15000 + Math.random() * 30000; // 15-45 seconds for realistic timing
                     }
                 }
             });
@@ -5177,7 +5180,7 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
 
         // Enhanced: Draw bird interaction UI (hover labels and lock-on effects)
         function drawBirdInteractionUI() {
-            // Draw hover label
+            // Draw hover label for adult birds
             if (hoveredBird) {
                 const birdName = getBirdName(hoveredBird);
                 const birdType = hoveredBird.birdType.name;
@@ -5217,16 +5220,58 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 ctx.stroke();
             }
 
-            // FIXED: Draw hover info for trees
-            if (hoveredTree) {
-                const treeName = getTreeName(hoveredTree);
-                const healthPercent = Math.round(hoveredTree.health);
-                const ageDays = Math.round(hoveredTree.age / dayNightDuration);
-                const labelText = `${treeName} (HP: ${healthPercent}%, Age: ${ageDays} days)`;
+            // Draw hover label for baby birds
+            if (hoveredBabyBird) {
+                const hungerLevel = Math.max(0, 100 - (hoveredBabyBird.timeSinceLastMeal / 4.2));
+                const labelText = `Baby ${hoveredBabyBird.birdType.name} (Hunger: ${Math.round(hungerLevel)}%, Age: ${Math.round(hoveredBabyBird.age)}s, Fed: ${hoveredBabyBird.feedCount}x)`;
 
-                // Position label above tree crown
-                const labelX = hoveredTree.x;
-                const labelY = hoveredTree.y - hoveredTree.trunkHeight - hoveredTree.leafRadius - 20;
+                // Position label above baby bird
+                const labelX = hoveredBabyBird.x;
+                const labelY = hoveredBabyBird.y - 30;
+
+                // Measure text for background sizing
+                ctx.font = 'bold 13px Arial';
+                const textMetrics = ctx.measureText(labelText);
+                const padding = 8;
+                const bgWidth = textMetrics.width + padding * 2;
+                const bgHeight = 20;
+
+                // Draw background with high contrast
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(labelX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
+
+                // Draw border for visibility
+                ctx.strokeStyle = 'rgba(255, 200, 200, 0.6)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(labelX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
+
+                // Draw text in high-contrast color
+                ctx.fillStyle = '#FFE0E0'; // Slight pink for baby birds
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(labelText, labelX, labelY);
+
+                // Draw slight highlight circle around hovered baby bird
+                ctx.strokeStyle = 'rgba(255, 200, 200, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(hoveredBabyBird.x, hoveredBabyBird.y, 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // FIXED: Draw hover info for trees with 10-second timeout
+            if (hoveredTree && hoveredTreeStartTime > 0) {
+                // Check if timeout has elapsed (10 seconds)
+                const elapsed = Date.now() - hoveredTreeStartTime;
+                if (elapsed < TREE_HOVER_TIMEOUT) {
+                    const treeName = getTreeName(hoveredTree);
+                    const healthPercent = Math.round(hoveredTree.health);
+                    const ageDays = Math.round(hoveredTree.age / dayNightDuration);
+                    const labelText = `${treeName} (HP: ${healthPercent}%, Age: ${ageDays} days)`;
+
+                    // Position label above tree crown
+                    const labelX = hoveredTree.x;
+                    const labelY = hoveredTree.y - hoveredTree.trunkHeight - hoveredTree.leafRadius - 20;
 
                 // Measure text for background sizing
                 ctx.font = 'bold 14px Arial';
@@ -5250,13 +5295,14 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 ctx.textBaseline = 'middle';
                 ctx.fillText(labelText, labelX, labelY);
 
-                // Draw slight highlight circle around hovered tree crown
-                ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(hoveredTree.x, hoveredTree.y - hoveredTree.trunkHeight, hoveredTree.leafRadius * hoveredTree.scale + 10, 0, Math.PI * 2);
-                ctx.stroke();
-            }
+                    // Draw slight highlight circle around hovered tree crown
+                    ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(hoveredTree.x, hoveredTree.y - hoveredTree.trunkHeight, hoveredTree.leafRadius * hoveredTree.scale + 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                } // End timeout check
+            } // End hoveredTree check
 
             // Draw locked animal indicator and follow camera
             if (lockedAnimal && lockedAnimalType) {
@@ -18202,15 +18248,16 @@ if (mushroomMode) {
 
     // Calculate camera offset to center on locked animal
     if (lockedAnimal) {
+        // Center bird at 40% from top (looks better than exact center)
         const targetOffsetX = canvas.width / 2 - lockedAnimal.x * cameraZoom;
-        const targetOffsetY = canvas.height / 2 - lockedAnimal.y * cameraZoom;
+        const targetOffsetY = canvas.height * 0.4 - lockedAnimal.y * cameraZoom;
         const panSpeed = 0.1; // Smooth panning
         cameraOffsetX += (targetOffsetX - cameraOffsetX) * panSpeed;
         cameraOffsetY += (targetOffsetY - cameraOffsetY) * panSpeed;
 
-        // FIXED: Clamp camera offset to prevent excessive whitespace
+        // FIXED: Increase vertical limit to allow better centering of low birds
         // Don't let camera pan too far from center to keep ground/sky visible
-        const maxOffsetY = canvas.height * 0.3; // Limit vertical panning
+        const maxOffsetY = canvas.height * 0.5; // Increased from 0.3 for better centering
         cameraOffsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, cameraOffsetY));
     } else {
         // Return to normal view
@@ -20220,7 +20267,23 @@ canvas.addEventListener('mousemove', (e) => {
         }
     }
 
-    // Find tree under cursor
+    // Find baby bird under cursor
+    hoveredBabyBird = null;
+    if (!hoveredBird) { // Only check baby birds if not hovering over an adult
+        for (const baby of babyBirds) {
+            const dist = Math.sqrt(
+                Math.pow(mouseX - baby.x, 2) +
+                Math.pow(mouseY - baby.y, 2)
+            );
+            if (dist < 15) { // 15px hover radius for smaller baby birds
+                hoveredBabyBird = baby;
+                break;
+            }
+        }
+    }
+
+    // Find tree under cursor with timeout support
+    const previousHoveredTree = hoveredTree;
     hoveredTree = null;
     for (const tree of trees) {
         const dist = Math.sqrt(
@@ -20229,8 +20292,16 @@ canvas.addEventListener('mousemove', (e) => {
         );
         if (dist < tree.trunkWidth * 2 + 50) { // Larger hover area for trees
             hoveredTree = tree;
+            // Reset timer if hovering over a different tree
+            if (previousHoveredTree !== tree) {
+                hoveredTreeStartTime = Date.now();
+            }
             break;
         }
+    }
+    // Clear timer if no longer hovering
+    if (!hoveredTree) {
+        hoveredTreeStartTime = 0;
     }
 });
 
