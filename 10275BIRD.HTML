@@ -612,7 +612,7 @@
         // adjusted squirrel and rat behaviors, wind chime refinements, and overall ecosystem balance
         
         // Debug mode with severity levels
-        let debugMode = true; // Set to false in production
+        let debugMode = false; // Set to false in production
         let debugVisuals = false; // Start with debug visuals OFF
 
         const DEBUG_LEVELS = {
@@ -7483,7 +7483,7 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
 
                 // === NEW BEHAVIOR PROPERTIES ===
                 // Unique ID for tracking
-                this.id = Math.random().toString(36).substr(2, 9);
+                this.id = Math.random().toString(36).substring(2, 11);
 
                 // Flocking and social behavior
                 this.flockId = null; // Assigned when bird joins a flock
@@ -19290,7 +19290,7 @@ if (toggleMushroom) {
                     const newBirdhouse = new Birdhouse(x, y);
                     // CHANGE THIS LINE (make it incomplete so birds can build it):
                     newBirdhouse.isComplete = false; // Was true, now false
-                    newBirdhouse.materialsCollected = Math.floor(BIRDHOUSE_MATERIALS_NEEDED / 0); // Half built
+                    newBirdhouse.materialsCollected = Math.floor(BIRDHOUSE_MATERIALS_NEEDED / 2); // Half built
                     birdhouses.push(newBirdhouse);
                     
                     // Direct a bird to build it
