@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Garden View Ecosystem</title>
+    <title>Bird Window</title>
     <style>
         html, body {
     width: 100%;
@@ -1859,8 +1859,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         const BIRD_POOP_DELAY = 360000; // 6 minutes between poops
         const TREE_DEGRADATION_RATE = 0.25;
         const TREE_HEALTH_THRESHOLD = 0;
-        const BIRD_VISION_RADIUS = 500;
-        const BIRD_FOOD_VISION_RADIUS = 1080; // Reduced by ~10% from 1200
+        const BIRD_VISION_RADIUS = 400; // Reduced from 500 for better gameplay balance
+        const BIRD_FOOD_VISION_RADIUS = 800; // Reduced from 1080 for better balance
         const RAT_VISION_RADIUS = 80;
         const SQUIRREL_VISION_RADIUS = 70;
         const STAR_COUNT = 100;
@@ -1924,9 +1924,9 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         
         // V26: Adjusted bird behavior preferences for more perching and resting
         const BIRD_STATE_PREFERENCES = {
-            PERCHING: 0.65,    // Reduced slightly to make room for more ground activity
+            PERCHING: 0.80,    // Increased from 0.65 - birds perch much more for calm vibe
     RESTING: 0.20,
-    FLYING: 0.05,      // Decreased from 0.10 - even less flying
+    FLYING: 0.02,      // Decreased from 0.05 - minimal flying for calm atmosphere
     FEEDING: 0.25,     // Increased for more ground foraging
     FORAGING: 0.09,
     BUILDING: 0.015,
@@ -1958,7 +1958,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
     PREENING: 15000,    // 15 seconds - grooming session
     DRINKING: 3000,     // 3 seconds - quick drink
     ALARM: 800,         // 0.8 seconds - brief freeze before action
-    NEST_SITTING: 180000 // 3 minutes - sitting on nest
+    NEST_SITTING: 180000, // 3 minutes - sitting on nest
+    SLEEPING: 60000     // 60 seconds - sleeping (30-40 sec average with variation)
         };
         
         // Morning food spawn rates
@@ -2019,7 +2020,8 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
             PREENING: 'preening', // Grooming feathers
             DRINKING: 'drinking', // Drinking water (separate from bathing)
             ALARM: 'alarm', // Freeze response before fleeing
-            NEST_SITTING: 'nest_sitting' // Incubating/warming nest
+            NEST_SITTING: 'nest_sitting', // Incubating/warming nest
+            SLEEPING: 'sleeping' // Sleeping at night or during rest
         };
         
         const BIRDHOUSE_MATERIALS_NEEDED = 5;
@@ -2737,10 +2739,24 @@ function createFlower(x, y) {
 
         function drawFireflies() {
             fireflies.forEach(firefly => {
+                // Validate firefly position and properties (fix NaN crash)
+                if (!isFinite(firefly.x) || !isFinite(firefly.y) ||
+                    !isFinite(firefly.size) || !isFinite(firefly.glowIntensity)) {
+                    debugLog("Invalid firefly detected, skipping draw", DEBUG_LEVELS.WARNING);
+                    return;
+                }
+
                 ctx.save();
 
                 // Draw glow effect (same as UFO will use)
                 const glowRadius = firefly.size * 3 * firefly.glowIntensity;
+
+                // Additional safety check for glowRadius
+                if (!isFinite(glowRadius) || glowRadius <= 0) {
+                    ctx.restore();
+                    return;
+                }
+
                 const gradient = ctx.createRadialGradient(
                     firefly.x, firefly.y, 0,
                     firefly.x, firefly.y, glowRadius
@@ -7161,6 +7177,8 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 const treeIndex = trees.indexOf(tree);
                 const shouldRemove = tree.degrade(deltaTime);
                 if (shouldRemove) {
+                    // Remove nests associated with this tree (fix floating nest bug)
+                    nests = nests.filter(nest => nest.tree !== tree);
                     trees.splice(treeIndex, 1);
                 } else {
                     tree.draw();
@@ -7185,6 +7203,9 @@ if (timeOfDay < 1 && Math.random() < 0.001) {
                 
                 // Remove it if health is below threshold
                 if (leastHealthyIndex !== -1 && lowestHealth < 40) {
+                    const removedTree = trees[leastHealthyIndex];
+                    // Remove nests associated with this tree (fix floating nest bug)
+                    nests = nests.filter(nest => nest.tree !== removedTree);
                     debugLog(`Removing unhealthy tree at index ${leastHealthyIndex} with health ${lowestHealth}`);
                     trees.splice(leastHealthyIndex, 1);
                 }
@@ -11731,7 +11752,7 @@ class Squirrel {
                 }
 
                 // Random chance to knock a branch loose (becomes a twig on the ground)
-                if (Math.random() < 0.0008) { // Small random chance per frame
+                if (Math.random() < 0.0004) { // Reduced by 50% from 0.0008 to prevent branch pileup
                     const branchX = this.climbingTree.x + (Math.random() - 0.5) * 30;
                     const branchY = this.groundY - 5;
                     twigs.push({
