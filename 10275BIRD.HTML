@@ -1890,7 +1890,7 @@ let rainsCompleted = 0; // Track number of completed rain events (for pond forma
         const LIGHTNING_CHANCE = 0.3; // 30% chance of lightning during rain
         const LIGHTNING_TREE_DAMAGE = 70; // Damage to tree from lightning
         const SPECIAL_TWIG_CHANCE = 0.7; // 70% chance of a twig being special after lightning
-        const RAIN_PROBABILITY = 0.25; // changed 
+        const RAIN_PROBABILITY = 0.95; // 95% accuracy for weather forecast 
         const MAX_BIRDS = 50;
         const MAX_FOOD = 50; // REDUCED from 70 - encourage consumption
         const MAX_SPEED = 5; // Maximum speed for moving entities
@@ -3582,21 +3582,33 @@ if (rainsCompleted >= 5 && ponds.length === 0) {
     addDiaryEntry("A pond has formed in the garden! Koi and frogs move in.", 'milestone');
 
     // Spawn a couple of koi in the pond
+    // Traditional koi colors for variety
+    const koiColors = [
+        '#FF6B35', // Orange-red (Kohaku)
+        '#FFD700', // Gold (Yamabuki Ogon)
+        '#FF4500', // Deep orange
+        '#FFA500', // Bright orange
+        '#DC143C', // Crimson red
+        '#FF8C00', // Dark orange
+        '#8B4513', // Brown (Chagoi)
+        '#708090'  // Slate grey (Asagi)
+    ];
+
     koi.push({
-        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
         x: pondX,
         y: pondY,
         pondIndex: 0,
         swimAngle: Math.random() * Math.PI * 2,
-        color: '#FF6B00'
+        color: koiColors[Math.floor(Math.random() * koiColors.length)]
     });
     koi.push({
-        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
         x: pondX,
         y: pondY,
         pondIndex: 0,
         swimAngle: Math.random() * Math.PI * 2,
-        color: '#FFD700'
+        color: koiColors[Math.floor(Math.random() * koiColors.length)]
     });
 
     // Spawn a frog near the pond
@@ -4935,7 +4947,25 @@ currentHour = Math.floor(((timeOfDay < 1 ? timeOfDay * 12 : 12 + (timeOfDay - 1)
                 skyColor = `hsl(${260 - (timeOfDay - 1) * 60}, 70%, ${40 - (timeOfDay - 1) * 20}%)`;
             }
 
-            ctx.fillStyle = skyColor;
+            // Create smooth gradient instead of solid color for more natural sky
+            const skyGradient = ctx.createLinearGradient(0, -canvas.height, 0, canvas.height * GROUND_HEIGHT_RATIO);
+
+            // Top of sky (darker/more saturated)
+            skyGradient.addColorStop(0, skyColor);
+
+            // Middle transition (slightly lighter)
+            const middleColor = skyColor.replace(/(\d+)%\)$/, (match, p1) => {
+                return `${Math.min(100, parseInt(p1) + 10)}%)`;
+            });
+            skyGradient.addColorStop(0.5, middleColor);
+
+            // Bottom of sky near horizon (lighter/less saturated for atmospheric perspective)
+            const horizonColor = skyColor.replace(/(\d+)%, (\d+)%\)$/, (match, p1, p2) => {
+                return `${Math.max(0, parseInt(p1) - 15)}%, ${Math.min(100, parseInt(p2) + 15)}%)`;
+            });
+            skyGradient.addColorStop(1, horizonColor);
+
+            ctx.fillStyle = skyGradient;
             // FIXED: Extend sky to cover entire canvas even when camera is zoomed/panned
             // Draw a much larger rectangle to prevent whitespace when locked on
             ctx.fillRect(-canvas.width, -canvas.height, canvas.width * 3, canvas.height * GROUND_HEIGHT_RATIO * 3);
@@ -18827,13 +18857,14 @@ if (antHill) {
                     ripples: []
                 });
 
-                // Add 2 koi to the pond
+                // Add 2 koi to the pond with traditional colors
+                const koiColors = ['#FF6B35', '#FFD700', '#FF4500', '#FFA500', '#DC143C', '#FF8C00', '#8B4513', '#708090'];
                 for (let i = 0; i < 2; i++) {
                     koi.push({
-                        id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+                        id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
                         x: pondX,
                         y: pondY,
-                        color: ['#FF6B35', '#FFD23F', '#FFFFFF', '#FF006E'][Math.floor(Math.random() * 4)],
+                        color: koiColors[Math.floor(Math.random() * koiColors.length)],
                         swimAngle: Math.random() * Math.PI * 2,
                         pondIndex: ponds.length - 1
                     });
@@ -19553,13 +19584,14 @@ spawnKoiBtn.addEventListener('click', () => {
         if (!koi) koi = [];
 
         const pond = ponds[0];
+        const koiColors = ['#FF6B35', '#FFD700', '#FF4500', '#FFA500', '#DC143C', '#FF8C00', '#8B4513', '#708090'];
         koi.push({
-            id: Math.random().toString(36).substr(2, 9), // Unique ID for naming
+            id: Math.random().toString(36).substring(2, 11), // Unique ID for naming
             x: pond.x + pond.width / 2,
             y: pond.y + pond.height / 2,
             pondIndex: 0,
             swimAngle: Math.random() * Math.PI * 2,
-            color: '#FF6B00'
+            color: koiColors[Math.floor(Math.random() * koiColors.length)]
         });
 
         debugLog(`Koi spawned in pond`);
